@@ -93,6 +93,9 @@ prediction1 <- predict(model1, subtest, type = "class")
 # Plot the Decision Tree
 rpart.plot(model1, main="Classification Tree", extra=102, under=TRUE, faclen=0)
 ```
+```{r}
+confusionMatrix(as.factor(subtest$classe), prediction1)
+```
 
 ### Prediction model: Random Forest
 ```{r}
@@ -105,6 +108,11 @@ model2 <- randomForest(classe ~. , data=subtrain, method="class")
 prediction2 <- predict(model2, subtest, type = "class")
 table(prediction2,subtest$classe)
 ```
+
+```{r}
+confusionMatrix(as.factor(subtest$classe), prediction2)
+```
+
 
 ## Dicision
 The random tree model is chosen, since it has better accuracy.
