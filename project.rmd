@@ -1,0 +1,125 @@
+---
+title: "Practical Machine Learning Project"
+date: "2020/9/8"
+output: html_document
+---
+## Backgroud
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Data
+The training data for this project are available here: [https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv]
+
+The test data are available here: [https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv]
+
+The data for this project come from this source: [http://groupware.les.inf.puc-rio.br/har]. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+## Purpose
+The goal of your project is to predict the manner in which they did the exercise. This is the “classe” variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
+
+## Preliminary Work
+### How the model was built
+Our outcome variable is classe, a factor variable with 5 levels. For this data set, “participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in 5 different fashions:
+- exactly according to the specification (Class A)
+- throwing the elbows to the front (Class B)
+- lifting the dumbbell only halfway (Class C)
+- lowering the dumbbell only halfway (Class D)
+- throwing the hips to the front (Class E)
+Class A corresponds to the specified execution of the exercise, while the other 4 classes correspond to common mistakes." [1]
+
+### Cross-validation
+Cross-validation will be performed by subsampling our training data set randomly without replacement into 2 subsamples: TrainTrainingSet data (75% of the original Training data set) and TestTrainingSet data (25%). Our models will be fitted on the TrainTrainingSet data set, and tested on the TestTrainingSet data. Once the most accurate model is choosen, it will be tested on the original Testing data set.
+
+### Expected out-of-sample error
+
+The expected out-of-sample error will correspond to the quantity: 1-accuracy in the cross-validation data. Accuracy is the proportion of correct classified observation over the total sample in the subTesting data set. Expected accuracy is the expected accuracy in the out-of-sample data set (i.e. original testing data set). Thus, the expected value of the out-of-sample error will correspond to the expected number of missclassified observations/total observations in the Test data set, which is the quantity: 1-accuracy found from the cross-validation data set.
+
+## Code and Model
+
+```{r}
+# Loading the library
+library(dplyr)
+library(lattice)
+library(ggplot2)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+library(rattle)
+library(kernlab)
+library(randomForest)
+```
+```{r}
+# Loading the data
+trainingset <- read.csv("E:/A/coursera/JHU/pml-training.csv", na.strings=c("NA","#DIV/0!", ""))
+testingset <- read.csv("E:/A/coursera/JHU/pml-testing.csv", na.strings=c("NA","#DIV/0!", ""))
+```
+
+```{r}
+# Check dimensions for number of variables and number of observations
+dim(trainingset)
+dim(testingset)
+```
+```{r}
+# Delete columns with all missing values
+trainingset<-trainingset[,colSums(is.na(trainingset)) == 0]
+testingset <-testingset[,colSums(is.na(testingset)) == 0]
+```
+```{r}
+# delete irrelevant variables
+trainingset   <-trainingset[,-c(1:7)]
+testingset <-testingset[,-c(1:7)]
+```
+```{r}
+dim(trainingset)
+dim(testingset)
+```
+```{r}
+head(trainingset)
+```
+```{r}
+head(testingset)
+```
+```{r}
+# partition the data so that 75% of the training dataset into training and the remaining 25% to testing
+traintrainset <- createDataPartition(y=trainingset$classe, p=0.75, list=FALSE)
+subtrain <- trainingset[traintrainset, ] 
+subtest <- trainingset[-traintrainset, ]
+```
+
+### Prediction model: Decision Tree
+```{r}
+model1 <- rpart(classe ~ ., data=subtrain, method="class")
+prediction1 <- predict(model1, subtest, type = "class")
+# Plot the Decision Tree
+rpart.plot(model1, main="Classification Tree", extra=102, under=TRUE, faclen=0)
+```
+
+### Prediction model: Random Forest
+```{r}
+subtrain$classe=as.factor(subtrain$classe)
+```
+```{r}
+model2 <- randomForest(classe ~. , data=subtrain, method="class")
+```
+```{r}
+prediction2 <- predict(model2, subtest, type = "class")
+table(prediction2,subtest$classe)
+```
+
+## Dicision
+The random tree model is chosen, since it has better accuracy.
+
+## Submission
+```{r}
+predictfinal <- predict(model2, testingset, type="class")
+predictfinal
+```
+
+## Reference
+[1] Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human ’13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+
+
+
+
+
